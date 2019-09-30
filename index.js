@@ -1,4 +1,5 @@
 var almostEqual = require('almost-equal')
+var rat = require('big-rat')
 
 module.exports = RSlice
 
@@ -20,12 +21,43 @@ function RSlice (slicesOrBins) {
 }
 
 RSlice.prototype.set = function (key, size) {
+  var bin = this.bins[key]
+  if (!bin) {
+    bin = this.bins[key] = { size: 0, slices: [] }
+    this._binKeys.push(key)
+    this._binKeys.sort()
+    if (this._binKeys.length === 1) {
+      bin.size = size
+      bin.slices.push([0,1])
+      this._totalSize += size
+      //this.slices.push([key,0,1])
+      return
+    }
+  }
+  //this._shrink(key, size)
   if (!this.bins[key] || size > this.bins[key].size) {
     this._grow(key, size)
   } else {
     this._shrink(key, size)
   }
 }
+
+/*
+
+  BEFORE:
+    [    A    ][    B    ][    C    ][  D  ]
+        11         11         11        7
+        SIZE=11+11+11+7=40
+
+  AFTER:
+    [    A    ][ B ][    C    ][  D  ]
+        11       5      11        7
+        SIZE=11+5+11+7=34
+
+    A/40 = (A+R)/34
+    R=A*34/40-A
+    r=R/40
+*/
 
 RSlice.prototype._shrink = function (key, size) {
   var bin = this.bins[key]
@@ -35,8 +67,10 @@ RSlice.prototype._shrink = function (key, size) {
     var k = this._binKeys[i]
     if (k === key) continue
     var b = this.bins[k]
-    var rem = (bin.size - size) / n / this._totalSize
+    //var rem = bin.size / (n-1) / this._totalSize - size / (n-1) / newSize
+    var rem = (b.size - b.size * newSize / this._totalSize) / newSize
     for (var j = 0; j < bin.slices.length; j++) {
+      // todo: slurp up smallest slices first?
       var len = length(bin.slices[j])
       if (almostEqual(len, rem)) {
         rem -= len
@@ -65,24 +99,11 @@ RSlice.prototype._grow = function (key, size) {
   var self = this
   var n = this._binKeys.length
   var bin = this.bins[key]
-  if (!bin) {
-    bin = this.bins[key] = { size: 0, slices: [] }
-    this._binKeys.push(key)
-    this._binKeys.sort()
-    if (n === 0) {
-      bin.size = size
-      bin.slices.push([0,1])
-      this._totalSize += size
-      this.slices.push([key,0,1])
-      return
-    }
-  }
   var newSize = this._totalSize + (size - bin.size)
   bin.size = size
   for (var i = 0; i < n; i++) {
+    if (this._binKeys[i] === key) continue
     var b = this.bins[this._binKeys[i]]
-    var take = bin.size / n
-    var takeFloat = take / newSize
     for (var j = 0; j < b.slices.length; j++) {
       var prevFloatSize = length(b.slices[j])
       var newFloatSize = prevFloatSize * this._totalSize/newSize
@@ -103,7 +124,7 @@ RSlice.prototype._grow = function (key, size) {
         if (almostEqual(length(src.slices[k]), remFloatSize)) {
           matched = true
           dst.slices.push(src.slices[k])
-          this.slices.push([key,dst.slices[k][0],dst.slices[k][1]])
+          //this.slices.push([key,dst.slices[k][0],dst.slices[k][1]])
           src.slices.splice(k,1)
           break
         }
@@ -115,13 +136,13 @@ RSlice.prototype._grow = function (key, size) {
         if (almostEqual(len, remFloatSize)) {
           matched = true
           dst.slices.push(src.slices[k])
-          this.slices.push([key,dst.slices[k][0],dst.slices[k][1]])
+          //this.slices.push([key,dst.slices[k][0],dst.slices[k][1]])
           src.slices.splice(k,1)
           break
         } else if (len < remFloatSize) {
           remFloatSize -= len
           dst.slices.push(src.slices[k])
-          this.slices.push([key,dst.slices[k][0],dst.slices[k][1]])
+          //this.slices.push([key,dst.slices[k][0],dst.slices[k][1]])
           src.slices.splice(k,1)
           k--
         }
@@ -134,13 +155,13 @@ RSlice.prototype._grow = function (key, size) {
         var len = length(iv)
         if (len < remFloatSize) continue
         dst.slices.push([iv[1]-remFloatSize,iv[1]])
-        this.slices.push([key,iv[1]-remFloatSize,iv[1]])
+        //this.slices.push([key,iv[1]-remFloatSize,iv[1]])
         iv[1] -= remFloatSize
         matched = true
         break
       }
       if (matched) continue
-      if (remFloatSize > 0.0000001) {
+      if (!almostEqual(remFloatSize,0.0)) {
         throw new Error('grow not matched: ' + remFloatSize)
       }
     }

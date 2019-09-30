@@ -8,7 +8,8 @@
     "partitioning"
   ],
   "dependencies": {
-    "almost-equal": "^1.1.0"
+    "almost-equal": "^1.1.0",
+    "big-rat": "^1.0.4"
   },
   "devDependencies": {
     "tape": "^4.11.0"
