@@ -34,33 +34,6 @@ RSlice.prototype.set = function (key, size) {
       return
     }
   }
-  //this._shrink(key, size)
-  if (!this.bins[key] || size > this.bins[key].size) {
-    this._grow(key, size)
-  } else {
-    this._shrink(key, size)
-  }
-}
-
-/*
-
-  BEFORE:
-    [    A    ][    B    ][    C    ][  D  ]
-        11         11         11        7
-        SIZE=11+11+11+7=40
-
-  AFTER:
-    [    A    ][ B ][    C    ][  D  ]
-        11       5      11        7
-        SIZE=11+5+11+7=34
-
-    A/40 = (A+R)/34
-    R=A*34/40-A
-    r=R/40
-*/
-
-RSlice.prototype._shrink = function (key, size) {
-  var bin = this.bins[key]
   var newSize = this._totalSize + (size - bin.size)
   var n = this._binKeys.length
   for (var i = 0; i < n; i++) {
@@ -68,23 +41,34 @@ RSlice.prototype._shrink = function (key, size) {
     if (k === key) continue
     var b = this.bins[k]
     //var rem = bin.size / (n-1) / this._totalSize - size / (n-1) / newSize
-    var rem = (b.size - b.size * newSize / this._totalSize) / newSize
-    for (var j = 0; j < bin.slices.length; j++) {
+    var rem = (b.size * newSize / this._totalSize - b.size) / newSize
+    if (almostEqual(rem, 0.0)) continue
+    var src, dst
+    if (rem > 0) {
+      src = b
+      dst = bin
+    } else {
+      src = bin
+      dst = b
+      rem *= -1
+    }
+    // todo: convert to 2-pass. only split on 2nd pass
+    for (var j = 0; j < src.slices.length; j++) {
       // todo: slurp up smallest slices first?
-      var len = length(bin.slices[j])
+      var len = length(src.slices[j])
       if (almostEqual(len, rem)) {
         rem -= len
-        b.slices.push(bin.slices[j])
-        bin.slices.splice(j,1)
+        dst.slices.push(src.slices[j])
+        src.slices.splice(j,1)
         break
       } else if (len < rem) {
-        b.slices.push(bin.slices[j])
-        bin.slices.splice(j,1)
+        dst.slices.push(src.slices[j])
+        src.slices.splice(j,1)
         j--
         rem -= len
       } else {
-        b.slices.push([bin.slices[j][1]-rem,bin.slices[j][1]])
-        bin.slices[j][1] -= rem
+        dst.slices.push([src.slices[j][1]-rem,src.slices[j][1]])
+        src.slices[j][1] -= rem
         break
       }
     }
@@ -94,7 +78,6 @@ RSlice.prototype._shrink = function (key, size) {
   cleanup(bin)
   this._totalSize = newSize
 }
-
 RSlice.prototype._grow = function (key, size) {
   var self = this
   var n = this._binKeys.length
