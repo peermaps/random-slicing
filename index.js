@@ -14,8 +14,10 @@ function RSlice (bins) {
 }
 
 RSlice.prototype.set = function (key, size) {
+  if (size < 0) throw new Error('size must be positive. received: ' + size)
   var bin = this.bins[key]
   if (!bin) {
+    if (size === 0) return
     bin = this.bins[key] = { size: 0, slices: [] }
     this._binKeys.push(key)
     this._binKeys.sort()
@@ -82,12 +84,18 @@ RSlice.prototype.set = function (key, size) {
       }
     }
     if (matched) continue
-    throw new Error('not matched')
+    if (size > 0) {
+      throw new Error('not matched: ' + key + ': ' + size)
+    }
   }
   bin.size = size
-  for (var i = 0; i < n; i++) {
+  for (var i = 0; i < this._binKeys.length; i++) {
     var b = this.bins[this._binKeys[i]]
-    cleanup(b)
+    if (b.size === 0) {
+      delete this.bins[this._binKeys[i]]
+      this._binKeys.splice(i,1)
+      i--
+    } else cleanup(b)
   }
   this._totalSize = newSize
 }

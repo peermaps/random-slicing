@@ -1,5 +1,4 @@
 module.exports = function (bins) {
-  var valid = true
   var total = 0
   var binKeys = Object.keys(bins)
   for (var i = 0; i < binKeys.length; i++) {
