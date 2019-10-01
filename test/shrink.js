@@ -2,14 +2,10 @@ var test = require('tape')
 var RSlice = require('../')
 var roundSlices = require('./lib/round-slices.js')
 var valid = require('./lib/valid.js')
-var show = require('./lib/show.js')
 
 test('shrink', function (t) {
   var rs = new RSlice
-  rs.set('A',20)
-  rs.set('B', 20)
-  rs.set('C', 20)
-  rs.set('D', 30)
+  rs.set({ A: 20, B: 20, C: 20, D: 30 })
   t.deepEqual(roundSlices(rs.bins,2), {
     A: { size: 20, slices: [[0,0.22]] },
     B: { size: 20, slices: [[0.5,0.72]] },
@@ -17,7 +13,7 @@ test('shrink', function (t) {
     D: { size: 30, slices: [[0.22,0.33],[0.39,0.5],[0.72,0.83]] }
   })
   t.ifError(valid(rs.bins), 'valid initial')
-  rs.set('D', 20)
+  rs.set({ D: 20 })
   t.ifError(valid(rs.bins), 'valid after shrinking D')
   t.equal(rs.bins.D.size, 20)
   t.end()
@@ -25,26 +21,21 @@ test('shrink', function (t) {
 
 test('multi-grow/shrink', function (t) {
   var rs = new RSlice
-  rs.set('A',20)
-  rs.set('B', 20)
-  rs.set('C', 20)
-  rs.set('D', 20)
+  rs.set({ A: 20, B: 20, C: 20, D: 20 })
   t.ifError(valid(rs.bins), 'valid initial')
-  rs.set('A', 10)
+  rs.set({ A: 10 })
   t.ifError(valid(rs.bins), 'valid after shrinking A')
-  rs.set('B', 15)
+  rs.set({ B: 15 })
   t.ifError(valid(rs.bins), 'valid after shrinking B')
-  show(rs)
-  rs.set('C', 40)
-  show(rs)
+  rs.set({ C: 40 })
   t.ifError(valid(rs.bins), 'valid after growing C')
-  rs.set('B', 12)
+  rs.set({ B: 12 })
   t.ifError(valid(rs.bins), 'valid after shrinking B')
-  rs.set('D', 17)
+  rs.set({ D: 17 })
   t.ifError(valid(rs.bins), 'valid after shrinking D')
-  rs.set('A', 5)
+  rs.set({ A: 5 })
   t.ifError(valid(rs.bins), 'valid after shrinking A')
-  rs.set('B', 25)
+  rs.set({ B: 25 })
   t.ifError(valid(rs.bins), 'valid after growing B')
   t.equal(rs.bins.A.size, 5)
   t.equal(rs.bins.B.size, 25)

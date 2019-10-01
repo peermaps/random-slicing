@@ -2,8 +2,8 @@ var RSlice = require('../')
 var valid = require('../test/lib/valid.js')
 
 var rs = new RSlice
-var keys = ['A','B','C','D','E','F','G']
-keys.forEach(key => rs.set(key, 20))
+rs.set({ A: 20, B: 20, C: 20, D: 20, E: 20, F: 20, G: 20 })
+var keys = Object.keys(rs.bins)
 show(rs)
 
 for (var i = 0; i < 10000; i++) {
@@ -13,7 +13,9 @@ for (var i = 0; i < 10000; i++) {
   if (size === 0 && rs._binKeys.length === 1 && rs._binKeys[0] === key) {
     size = 1
   }
-  rs.set(key, Math.max(0, size))
+  var op = {}
+  op[key] = Math.max(0, size)
+  rs.set(op)
   var err = valid(rs.bins)
   if (err) throw err
   show(rs)

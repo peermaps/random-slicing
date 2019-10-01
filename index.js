@@ -13,91 +13,95 @@ function RSlice (bins) {
   })
 }
 
-RSlice.prototype.set = function (key, size) {
-  if (size < 0) throw new Error('size must be positive. received: ' + size)
-  var bin = this.bins[key]
-  if (!bin) {
-    if (size === 0) return
-    bin = this.bins[key] = { size: 0, slices: [] }
-    this._binKeys.push(key)
-    this._binKeys.sort()
-    if (this._binKeys.length === 1) {
-      bin.size = size
-      bin.slices.push([0,1])
-      this._totalSize += size
-      return
-    }
-  }
-  var newSize = this._totalSize + (size - bin.size)
-  var n = this._binKeys.length
-  for (var i = 0; i < n; i++) {
-    var k = this._binKeys[i]
-    if (k === key) continue
-    var b = this.bins[k]
-    var rem = (b.size * newSize / this._totalSize - b.size) / newSize
-    if (almostEqual(rem, 0.0)) continue
-    var src, dst
-    if (rem > 0) {
-      src = b
-      dst = bin
-    } else {
-      src = bin
-      dst = b
-      rem *= -1
-    }
-    var matched = false
-    // first search for an exact size segment to swap out
-    for (var j = 0; j < src.slices.length; j++) {
-      var len = length(src.slices[j])
-      if (almostEqual(len, rem)) {
-        rem -= len
-        dst.slices.push(src.slices[j])
-        src.slices.splice(j,1)
-        matched = true
-        break
+RSlice.prototype.set = function (updates) {
+  var self = this
+  Object.keys(updates).forEach(function (key) {
+    var size = updates[key]
+    if (size < 0) throw new Error('size must be positive. received: ' + size)
+    var bin = self.bins[key]
+    if (!bin) {
+      if (size === 0) return
+      bin = self.bins[key] = { size: 0, slices: [] }
+      self._binKeys.push(key)
+      self._binKeys.sort()
+      if (self._binKeys.length === 1) {
+        bin.size = size
+        bin.slices.push([0,1])
+        self._totalSize += size
+        return
       }
     }
-    if (matched) continue
-    // otherwise keep assigning smaller intervals 
-    for (var j = 0; j < src.slices.length; j++) {
-      var len = length(src.slices[j])
-      if (len <= rem) {
-        dst.slices.push(src.slices[j])
-        src.slices.splice(j,1)
-        j--
-        rem -= len
-        if (almostEqual(rem, 0.0)) {
+    var newSize = self._totalSize + (size - bin.size)
+    var n = self._binKeys.length
+    for (var i = 0; i < n; i++) {
+      var k = self._binKeys[i]
+      if (k === key) continue
+      var b = self.bins[k]
+      var rem = (b.size * newSize / self._totalSize - b.size) / newSize
+      if (almostEqual(rem, 0.0)) continue
+      var src, dst
+      if (rem > 0) {
+        src = b
+        dst = bin
+      } else {
+        src = bin
+        dst = b
+        rem *= -1
+      }
+      var matched = false
+      // first search for an exact size segment to swap out
+      for (var j = 0; j < src.slices.length; j++) {
+        var len = length(src.slices[j])
+        if (almostEqual(len, rem)) {
+          rem -= len
+          dst.slices.push(src.slices[j])
+          src.slices.splice(j,1)
           matched = true
           break
         }
       }
-    }
-    if (matched) continue
-    // otherwise find a suitable node to split
-    for (var j = 0; j < src.slices.length; j++) {
-      var len = length(src.slices[j])
-      if (len > rem) {
-        dst.slices.push([src.slices[j][1]-rem,src.slices[j][1]])
-        src.slices[j][1] -= rem
-        matched = true
-        break
+      if (matched) continue
+      // otherwise keep assigning smaller intervals 
+      for (var j = 0; j < src.slices.length; j++) {
+        var len = length(src.slices[j])
+        if (len <= rem) {
+          dst.slices.push(src.slices[j])
+          src.slices.splice(j,1)
+          j--
+          rem -= len
+          if (almostEqual(rem, 0.0)) {
+            matched = true
+            break
+          }
+        }
+      }
+      if (matched) continue
+      // otherwise find a suitable node to split
+      for (var j = 0; j < src.slices.length; j++) {
+        var len = length(src.slices[j])
+        if (len > rem) {
+          dst.slices.push([src.slices[j][1]-rem,src.slices[j][1]])
+          src.slices[j][1] -= rem
+          matched = true
+          break
+        }
+      }
+      if (matched) continue
+      if (size > 0) {
+        throw new Error('not matched: ' + key + ': ' + size)
       }
     }
-    if (matched) continue
-    if (size > 0) {
-      throw new Error('not matched: ' + key + ': ' + size)
+    bin.size = size
+    for (var i = 0; i < self._binKeys.length; i++) {
+      var b = self.bins[self._binKeys[i]]
+      if (b.size === 0) {
+        delete self.bins[self._binKeys[i]]
+        self._binKeys.splice(i,1)
+        i--
+      } else cleanup(b)
     }
-  }
-  bin.size = size
-  for (var i = 0; i < this._binKeys.length; i++) {
-    var b = this.bins[this._binKeys[i]]
-    if (b.size === 0) {
-      delete this.bins[this._binKeys[i]]
-      this._binKeys.splice(i,1)
-      i--
-    } else cleanup(b)
-  }
-  this._totalSize = newSize
+    self._totalSize = newSize
+  })
 }
 
 function cleanup (dst) {

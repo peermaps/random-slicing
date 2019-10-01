@@ -67,10 +67,7 @@ test('check move calculation', function (t) {
 
 test('moves', function (t) {
   var rs = new RSlice
-  rs.set('A',20)
-  rs.set('B', 20)
-  rs.set('C', 20)
-  rs.set('D', 20)
+  rs.set({ A: 20, B: 20, C: 20, D: 20 })
 
   var ops = [
     { A: 10 }, // shrink
@@ -94,8 +91,8 @@ test('moves', function (t) {
     })
     Object.keys(op).forEach(function (key) {
       expected += Math.abs(rs.bins[key].size / prevTotal - op[key] / newTotal)
-      rs.set(key, op[key])
     })
+    rs.set(op)
     var moved = calcMoves(prev, rs.bins)
     t.equal(round(moved,10000),round(expected,10000), JSON.stringify(op))
     t.ifError(valid(rs.bins), `valid after ${JSON.stringify(op)}`)
