@@ -1,5 +1,4 @@
 var almostEqual = require('almost-equal')
-var rat = require('big-rat')
 
 module.exports = RSlice
 
@@ -33,7 +32,6 @@ RSlice.prototype.set = function (key, size) {
     var k = this._binKeys[i]
     if (k === key) continue
     var b = this.bins[k]
-    //var rem = bin.size / (n-1) / this._totalSize - size / (n-1) / newSize
     var rem = (b.size * newSize / this._totalSize - b.size) / newSize
     if (almostEqual(rem, 0.0)) continue
     var src, dst
