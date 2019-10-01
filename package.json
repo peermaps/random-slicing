@@ -13,5 +13,8 @@
   },
   "devDependencies": {
     "tape": "^4.11.0"
+  },
+  "scripts": {
+    "test": "tape test/*.js"
   }
 }
