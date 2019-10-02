@@ -5,7 +5,10 @@ var valid = require('./lib/valid.js')
 
 test('shrink', function (t) {
   var rs = new RSlice
-  rs.set({ A: 20, B: 20, C: 20, D: 30 })
+  rs.set({ A: 20 })
+  rs.set({ B: 20 })
+  rs.set({ C: 20 })
+  rs.set({ D: 30 })
   t.deepEqual(roundSlices(rs.bins,2), {
     A: { size: 20, slices: [[0,0.22]] },
     B: { size: 20, slices: [[0.5,0.72]] },

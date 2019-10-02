@@ -15,27 +15,42 @@ function RSlice (bins) {
 
 RSlice.prototype.set = function (updates) {
   var self = this
+  var newSize = self._totalSize
+  var addedKey = false
   Object.keys(updates).forEach(function (key) {
+    var bin = self.bins[key]
+    newSize += updates[key] - (bin ? bin.size : 0)
+    if (!bin) {
+      if (updates[key] === 0) return
+      bin = self.bins[key] = { size: 0, slices: [] }
+      self._binKeys.push(key)
+      addedKey = true
+    }
+  })
+  if (addedKey) self._binKeys.sort()
+  var updateKeys = Object.keys(updates).sort()
+  if (self._totalSize === 0) {
+    var offset = 0
+    updateKeys.forEach(function (key) {
+      self.bins[key].size = updates[key]
+      self.bins[key].slices.push([
+        offset,
+        offset + updates[key] / newSize
+      ])
+      offset += updates[key] / newSize
+    })
+    self._totalSize = newSize
+    return
+  }
+  updateKeys.forEach(function (key) {
     var size = updates[key]
     if (size < 0) throw new Error('size must be positive. received: ' + size)
     var bin = self.bins[key]
-    if (!bin) {
-      if (size === 0) return
-      bin = self.bins[key] = { size: 0, slices: [] }
-      self._binKeys.push(key)
-      self._binKeys.sort()
-      if (self._binKeys.length === 1) {
-        bin.size = size
-        bin.slices.push([0,1])
-        self._totalSize += size
-        return
-      }
-    }
-    var newSize = self._totalSize + (size - bin.size)
     var n = self._binKeys.length
     for (var i = 0; i < n; i++) {
       var k = self._binKeys[i]
       if (k === key) continue
+      if (updates.hasOwnProperty(k)) continue
       var b = self.bins[k]
       var rem = (b.size * newSize / self._totalSize - b.size) / newSize
       if (almostEqual(rem, 0.0)) continue
@@ -92,16 +107,16 @@ RSlice.prototype.set = function (updates) {
       }
     }
     bin.size = size
-    for (var i = 0; i < self._binKeys.length; i++) {
-      var b = self.bins[self._binKeys[i]]
-      if (b.size === 0) {
-        delete self.bins[self._binKeys[i]]
-        self._binKeys.splice(i,1)
-        i--
-      } else cleanup(b)
-    }
-    self._totalSize = newSize
   })
+  for (var i = 0; i < self._binKeys.length; i++) {
+    var b = self.bins[self._binKeys[i]]
+    if (b.size === 0) {
+      delete self.bins[self._binKeys[i]]
+      self._binKeys.splice(i,1)
+      i--
+    } else cleanup(b)
+  }
+  self._totalSize = newSize
 }
 
 function cleanup (dst) {
