@@ -19,7 +19,7 @@ module.exports = function (bins) {
     totalFloat += ratio
     if (Math.abs(ratio - b.size / total) > 0.0001) {
       return new Error(`invalid ratio in ${binKeys[i]}:
-        ${b.size} / ${total} != ${ratio} (expected). actual: ${b.size/total}`)
+        ${b.size} / ${total}. expected: ${b.size/total}. actual: ${ratio}`)
     }
   }
   if (Math.abs(totalFloat-1.0) > 0.0001) {
