@@ -1,4 +1,5 @@
 var almostEqual = require('almost-equal')
+var EP = almostEqual.FLT_EPSILON
 
 module.exports = RSlice
 
@@ -52,12 +53,13 @@ RSlice.prototype.set = function (updates) {
     var ratio = sliceSum(bin.slices)
     var delta = ratio - newRatio
     if (delta <= 0.0) continue
+    if (almostEqual(delta, 0.0, EP)) continue
     var matched = false
     // first search for exact matches
     for (var j = 0; j < bin.slices.length; j++) {
       var iv = bin.slices[j]
       var len = length(iv)
-      if (!almostEqual(delta, len)) continue
+      if (!almostEqual(delta, len, EP)) continue
       gaps.push(iv)
       bin.slices.splice(j,1)
       matched = true
@@ -73,7 +75,7 @@ RSlice.prototype.set = function (updates) {
       bin.slices.splice(j,1)
       j--
       delta -= len
-      if (almostEqual(delta, 0.0)) {
+      if (almostEqual(delta, 0.0, EP)) {
         matched = true
         break
       }
@@ -84,6 +86,12 @@ RSlice.prototype.set = function (updates) {
       var iv = bin.slices[j]
       var len = length(iv)
       if (len < delta) continue
+      if (almostEqual(delta, len, EP)) {
+        gaps.push(iv)
+        bin.slices.splice(j,1)
+        matched = true
+        break
+      }
       gaps.push([iv[1]-delta,iv[1]])
       iv[1] -= delta
       matched = true
@@ -101,13 +109,13 @@ RSlice.prototype.set = function (updates) {
     var ratio = sliceSum(bin.slices)
     var delta = newRatio - ratio
     if (delta <= 0.0) continue
-    if (almostEqual(delta, 0.0)) continue
+    if (almostEqual(delta, 0.0, EP)) continue
     var matched = false
     // first search for exact matches
     for (var j = 0; j < gaps.length; j++) {
       var iv = gaps[j]
       var len = length(iv)
-      if (!almostEqual(len, delta)) continue
+      if (!almostEqual(len, delta, EP)) continue
       bin.slices.push(iv)
       gaps.splice(j,1)
       matched = true
@@ -123,7 +131,7 @@ RSlice.prototype.set = function (updates) {
       gaps.splice(j,1)
       j--
       delta -= len
-      if (almostEqual(delta, 0.0)) {
+      if (almostEqual(delta, 0.0, EP)) {
         matched = true
         break
       }
@@ -133,7 +141,7 @@ RSlice.prototype.set = function (updates) {
     for (var j = 0; j < gaps.length; j++) {
       var iv = gaps[j]
       var len = length(iv)
-      if (almostEqual(len, delta)) {
+      if (almostEqual(len, delta, EP)) {
         bin.slices.push(iv)
         gaps.splice(j,1)
         matched = true
@@ -145,17 +153,17 @@ RSlice.prototype.set = function (updates) {
       break
     }
     if (matched) continue
+    if (almostEqual(delta, 0.0, EP)) continue
     throw new Error('not matched: ' + key + ': ' + newBinSize)
   }
   if (gaps.length > 0) throw new Error('gaps remain: ' + JSON.stringify(gaps))
   // ---
-  var updateKeys = Object.keys(updates)
-  updateKeys.forEach(function (key) {
-    var bin = self.bins[key]
-    bin.size = updates[key]
-  })
   for (var i = 0; i < self._binKeys.length; i++) {
-    var b = self.bins[self._binKeys[i]]
+    var key = self._binKeys[i]
+    var b = self.bins[key]
+    if (updates.hasOwnProperty(key)) {
+      b.size = updates[key]
+    }
     if (b.size === 0) {
       delete self.bins[self._binKeys[i]]
       self._binKeys.splice(i,1)
@@ -177,7 +185,7 @@ function cleanup (dst) {
   // sort, remove 0-width, and combine adjacent slices
   dst.slices.sort(cmpIv)
   for (var i = 0; i < dst.slices.length; i++) {
-    if (almostEqual(length(dst.slices[i]),0)) {
+    if (almostEqual(length(dst.slices[i]), 0, EP)) {
       dst.slices.splice(i,1)
       i--
     }
@@ -193,7 +201,7 @@ function cleanup (dst) {
 
 function adjacent (g, iv) {
   if (!g) return false
-  return almostEqual(g[1],iv[0]) || almostEqual(g[0],iv[1])
+  return almostEqual(g[1],iv[0],EP) || almostEqual(g[0],iv[1],EP)
 }
 function length (iv) { return iv[1]-iv[0] }
 function cmpIv (a, b) {
