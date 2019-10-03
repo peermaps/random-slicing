@@ -10,11 +10,11 @@ module.exports = function (bins) {
     var ratio = 0
     for (var j = 0; j < b.slices.length; j++) {
       var iv = b.slices[j]
-      if (iv[0] >= iv[1]) {
+      if (iv[0].gte(iv[1])) {
         return new Error(`invalid interval in
           ${binKeys[i]}:${j} [${iv}]`)
       }
-      ratio += iv[1] - iv[0]
+      ratio += iv[1].toNumber() - iv[0].toNumber()
     }
     totalFloat += ratio
     if (Math.abs(ratio - b.size / total) > 0.0001) {
@@ -34,7 +34,7 @@ module.exports = function (bins) {
     var a = slices[i]
     for (var j = i+1; j < slices.length; j++) {
       var b = slices[j]
-      if (a[0] < b[1] && a[1] > b[0]) return new Error('overlap')
+      if (a[0].lt(b[1]) && a[1].gt(b[0])) return new Error('overlap')
     }
   }
 }

@@ -5,7 +5,7 @@ var copy = require('./lib/copy.js')
 var valid = require('./lib/valid.js')
 
 test('check move calculation', function (t) {
-  var prev = {
+  var prev = new RSlice({
     A: {
       size: 10,
       slices: [[0,0.1428571428571429],[0.23901098901098902,0.25]]
@@ -33,8 +33,8 @@ test('check move calculation', function (t) {
         [0.7307692307692308,0.8333333333333334]
       ]
     }
-  }
-  var cur = {
+  }).bins
+  var cur = new RSlice({
     A: {
       size: 10,
       slices: [[0,0.11764705882352945]]
@@ -60,7 +60,7 @@ test('check move calculation', function (t) {
         [0.7307692307692308,0.8333333333333334]
       ]
     }
-  }
+  }).bins
   t.equal(round(calcMoves(prev, cur),10000),0.1629)
   t.end()
 })

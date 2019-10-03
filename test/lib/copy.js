@@ -3,7 +3,9 @@ module.exports = function (bins) {
   Object.keys(bins).forEach(function (key) {
     copy[key] = {
       size: bins[key].size,
-      slices: bins[key].slices.map(function (x) { return x.slice() })
+      slices: bins[key].slices.map(function (x) {
+        return [ x[0].copy(), x[1].copy() ]
+      })
     }
   })
   return copy

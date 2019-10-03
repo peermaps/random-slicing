@@ -1,3 +1,4 @@
+var R = require('../../lib/r.js')
 var calcOverlap = require('./slices-overlap.js')
 
 module.exports = function (a, b) {
@@ -14,9 +15,10 @@ module.exports = function (a, b) {
 }
 
 function length (slices) {
-  var len = 0
+  var len = R(0)
   for (var i = 0; i < slices.length; i++) {
-    len += slices[i][1] - slices[i][0]
+    len.add(slices[i][1])
+    len.subtract(slices[i][0])
   }
-  return len
+  return len.toNumber()
 }

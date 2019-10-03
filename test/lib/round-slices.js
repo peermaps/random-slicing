@@ -5,7 +5,7 @@ module.exports = function roundSlices (bins, n) {
     nbins[key] = {
       size: bins[key].size,
       slices: bins[key].slices.map(([x,y]) => {
-        return [Math.round(x*p)/p,Math.round(y*p)/p]
+        return [Math.round(x.toNumber()*p)/p,Math.round(y.toNumber()*p)/p]
       })
     }
   })
