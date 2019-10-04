@@ -33,13 +33,13 @@ RSlice.prototype.set = function (updates) {
     newSize += updates[key] - (bin ? bin.size : 0)
   })
   if (self._binKeys.length === 0) {
-    var offset = 0
+    var offset = R(0)
     Object.keys(updates).forEach(function (key) {
       var slices = [[
-        R(offset),
-        R(updates[key]).divide(newSize).add(offset)
+        offset.copy(),
+        R(updates[key],newSize).add(offset)
       ]]
-      offset += updates[key] / newSize
+      offset.add(R(updates[key],newSize))
       self.bins[key] = { size: updates[key], slices }
       self._binKeys.push(key)
       self._totalSize += updates[key]
@@ -63,7 +63,7 @@ RSlice.prototype.set = function (updates) {
     var key = self._binKeys[i]
     var bin = self.bins[key]
     var newBinSize = updates.hasOwnProperty(key) ? updates[key] : bin.size
-    var newRatio = newBinSize / newSize
+    var newRatio = R(newBinSize,newSize)
     var ratio = sliceSum(bin.slices)
     var delta = ratio.copy().subtract(newRatio) // amount to shrink
     if (delta.lte(0.0)) continue
@@ -118,9 +118,9 @@ RSlice.prototype.set = function (updates) {
     var key = self._binKeys[i]
     var bin = self.bins[key]
     var newBinSize = updates.hasOwnProperty(key) ? updates[key] : bin.size
-    var newRatio = newBinSize / newSize
+    var newRatio = R(newBinSize,newSize)
     var ratio = sliceSum(bin.slices)
-    var delta = R(newRatio).subtract(ratio) // amount to grow
+    var delta = newRatio.copy().subtract(ratio) // amount to grow
     if (delta.lte(0.0)) continue
     var matched = false
     // first search for exact matches

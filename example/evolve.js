@@ -4,7 +4,7 @@ var valid = require('../test/lib/valid.js')
 var rs = new RSlice
 rs.set({ A: 20, B: 20, C: 20, D: 20, E: 20, F: 20, G: 20 })
 var keys = Object.keys(rs.bins)
-show(rs)
+//show(rs)
 
 for (var i = 0; i < 10000; i++) {
   var key = keys[Math.floor(Math.random()*keys.length)]
@@ -19,6 +19,7 @@ for (var i = 0; i < 10000; i++) {
   var err = valid(rs.bins)
   if (err) throw err
   show(rs)
+  //Object.keys(rs.bins).forEach(function (key) { console.log(rs.bins[key].slices) })
 }
 
 function show (rs) {
@@ -26,7 +27,9 @@ function show (rs) {
     var b = rs.bins[key]
     var n = 10000
     console.log(key,b.size,JSON.stringify(b.slices.map(function (slice) {
-      return [Math.round(slice[0]*n)/n,Math.round(slice[1]*n)/n]
+      var start = slice[0].toNumber()
+      var end = slice[1].toNumber()
+      return [Math.round(start*n)/n,Math.round(end*n)/n]
     })))
   })
   console.log('---')
