@@ -32,5 +32,5 @@ function show (rs) {
       return `[${start[0]}/${start[1]}..${end[0]}/${end[1]}]`
     }).join(', '))
   })
-  console.log('---')
+  console.log('---', i)
 }

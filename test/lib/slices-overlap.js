@@ -1,23 +1,23 @@
-var R = require('../../lib/r.js')
-var ZERO = R(0)
-var tmp0 = R(0)
-var tmp1 = R(0)
+var rat = require('../../lib/rat.js')
+var ZERO = rat.create(0,1)
+var tmp0 = rat.create(0,1)
+var tmp1 = rat.create(0,1)
 
 module.exports = function (a, b) {
-  var overlap = R(0)
+  var overlap = rat.create(0,1)
   for (var i = 0; i < a.length; i++) {
     for (var j = 0; j < b.length; j++) {
-      tmp0.multiply(ZERO)
-      tmp0.add(a[i][1])
-      tmp0.subtract(b[j][0])
-      tmp1.multiply(ZERO)
-      tmp1.add(b[j][1])
-      tmp1.subtract(a[i][0])
-      overlap.add(max(ZERO, min(tmp0, tmp1)))
+      rat.multiply(tmp0, tmp0, ZERO)
+      rat.add(tmp0,tmp0, a[i][1])
+      rat.subtract(tmp0, tmp0, b[j][0])
+      rat.multiply(tmp1, tmp1, ZERO)
+      rat.add(tmp1, tmp1, b[j][1])
+      rat.subtract(tmp1, tmp1, a[i][0])
+      rat.add(overlap, overlap, max(ZERO, min(tmp0, tmp1)))
     }
   }
   return overlap
 }
 
-function min (a, b) { return a.lt(b) ? a : b }
-function max (a, b) { return a.gt(b) ? a : b }
+function min (a, b) { return rat.lt(a,b) ? a : b }
+function max (a, b) { return rat.gt(a,b) ? a : b }

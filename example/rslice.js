@@ -1,8 +1,6 @@
 var RS = require('../')
-var rs = new RS({
-  A: { size: 40, slices: [[0.0,0.25]] },
-  B: { size: 120, slices: [[0.25,1.0]] }
-})
+var rs = new RS
+rs.set({ A: 40, B: 120 })
 rs.set({ A: 32, C: 80 })
 
 Object.entries(rs.getBins()).forEach(function ([key,bin]) {

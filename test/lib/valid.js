@@ -1,3 +1,5 @@
+var rat = require('../../lib/rat.js')
+
 module.exports = function (rs) {
   var total = 0
   for (var i = 0; i < rs._binKeys.length; i++) {
@@ -9,11 +11,11 @@ module.exports = function (rs) {
     var ratio = 0
     for (var j = 0; j < b.slices.length; j++) {
       var iv = b.slices[j]
-      if (iv[0].gte(iv[1])) {
+      if (rat.gte(iv[0],iv[1])) {
         return new Error(`invalid interval in
           ${rs._binKeys[i]}:${j} [${iv}]`)
       }
-      ratio += iv[1].toNumber() - iv[0].toNumber()
+      ratio += Number(iv[1].toString()) - Number(iv[0].toString())
     }
     totalFloat += ratio
     if (Math.abs(ratio - b.size / total) > 0.0001) {
@@ -33,7 +35,9 @@ module.exports = function (rs) {
     var a = slices[i]
     for (var j = i+1; j < slices.length; j++) {
       var b = slices[j]
-      if (a[0].lt(b[1]) && a[1].gt(b[0])) return new Error('overlap')
+      if (rat.lt(a[0],b[1]) && rat.gt(a[1],b[0])) {
+        return new Error('overlap')
+      }
     }
   }
 }

@@ -5,6 +5,14 @@ var rs = new RS
 rs.set({ A: 40, B: 100 })
 rs.set({ A: 32, C: 80 })
 rs.set({ D: 50, B: 110 })
+rs.set({ A: 20, B: 20, C: 20, D: 20 })
+rs.set({ A: 10 })
+rs.set({ B: 15 })
+rs.set({ C: 40 })
+rs.set({ B: 12 })
+rs.set({ D: 17 })
+rs.set({ A: 5 })
+rs.set({ B: 25 })
 
 // scale the slices up into 2**256 to get sha256 hash ranges
 var buckets = []
@@ -20,18 +28,8 @@ Object.entries(rs.getBins()).forEach(([key,bin]) => {
 })
 buckets.sort((a,b) => a[0] < b[0] ? -1 : +1)
 
-console.log(`meow => ${lookup('meow')}`)   // D
-console.log(`kitty => ${lookup('kitty')}`) // B
-console.log(`oof => ${lookup('oof')}`)     // B
-console.log(`gecko => ${lookup('gecko')}`) // D
-console.log(`toad => ${lookup('toad')}`)   // A
-
-function lookup (key) {
-  var h = createHash('sha256')
-  h.write(key)
-  var hash = h.digest('hex')
-  for (var i = 0; i < buckets.length; i++) {
-    if (hash < buckets[i][1]) return buckets[i][2]
-  }
-  return null
-}
+buckets.forEach(([start,end,key]) => {
+  console.log(key, start)
+  console.log(end.padStart(key.length+1+end.length))
+  console.log()
+})

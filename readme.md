@@ -34,10 +34,8 @@ Finally we display the integer ratios for each slicing interval.
 
 ``` js
 var RS = require('random-slicing')
-var rs = new RS({
-  A: { size: 40, slices: [[0.0,0.25]] },
-  B: { size: 120, slices: [[0.25,1.0]] }
-})
+var rs = new RS
+rs.set({ A: 40, B: 120 })
 rs.set({ A: 32, C: 80 })
 
 Object.entries(rs.getBins()).forEach(function ([key,bin]) {
@@ -52,9 +50,9 @@ function showSlice ([start,end]) {
 which prints:
 
 ```
-A 32 0/1..4/29
-B 120 1/4..89/116
-C 80 4/29..1/4, 89/116..1/1
+A 32 0/1..640/4640
+B 120 40/160..3560/4640
+C 80 640/4640..40/160, 3560/4640..160/160
 ```
 
 # api
@@ -68,9 +66,6 @@ var RS = require('random-slicing')
 Initialize a new random slicing with an optional allocation of `bins`.
 
 `bins` should be of the format returned by `rs.getBins()` documented below.
-
-For convenience in some cases, you may also use floating point numbers directly
-instead of array 2-tuples of base-10 strings.
 
 ## rs.set(updates)
 
@@ -89,10 +84,18 @@ bins, where each `bin` has:
 
 Each interval is an array 2-tuple `[start,end]` and `start` and `end` are each
 array 2-tuples of the form `[numerator,denominator]` where `numerator` and
-denominator are both strings.
+denominator are both built-in bigints.
 
-`bins` can be serialized with `JSON.stringify()`. After parsing, this can be fed
-back into the `RS` constructor to re-instantiate an equivalent `rs` instance.
+For example, a `bin` might look like:
+
+``` js
+{
+  size: 10,
+  slices: [[[0n,1n],[1n,7n]],[[87n,364n],[1n,4n]]]
+}
+```
+
+which contains slices from 0 to 1/7 and from 87/364 to 1/4.
 
 # license
 

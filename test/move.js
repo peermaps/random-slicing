@@ -1,66 +1,71 @@
 var test = require('tape')
+var rat = require('../lib/rat.js')
 var RSlice = require('../')
 var calcMoves = require('./lib/move.js')
 var valid = require('./lib/valid.js')
+
+var tmpr0 = [0n,1n]
+var tmpr1 = [0n,1n]
 
 test('check move calculation', function (t) {
   var prev = new RSlice({
     A: {
       size: 10,
-      slices: [[0,0.1428571428571429],[0.23901098901098902,0.25]]
+      slices: [[[0n,1n],[1n,7n]],[[87n,364n],[1n,4n]]]
     },
     B: {
       size: 15,
-      slices: [[0.5,0.7307692307692308]]
+      slices: [[[1n,2n],[19n,26n]]]
     },
     C: {
       size: 20,
       slices: [
-        [0.1785714285714286,0.2142857142857143],
-        [0.21703296703296707,0.23901098901098902],
-        [0.33333333333333337,0.41666666666666663],
-        [0.8333333333333334,1]
+        [[5n,28n],[3n,14n]],
+        [[5n,23n],[87n,364n]],
+        [[1n,3n],[5n,12n]],
+        [[5n,6n],[1n,1n]]
       ]
     },
     D: {
       size: 20,
       slices: [
-        [0.1428571428571429,0.1785714285714286],
-        [0.2142857142857143,0.21703296703296707],
-        [0.25,0.33333333333333337],
-        [0.41666666666666663,0.5],
-        [0.7307692307692308,0.8333333333333334]
+        [[1n,7n],[5n,28n]],
+        [[3n,14n],[5n,23n]],
+        [[1n,4n],[1n,3n]],
+        [[5n,12n],[1n,2n]],
+        [[19n,26n],[5n,6n]]
       ]
     }
   })
   var cur = new RSlice({
     A: {
       size: 10,
-      slices: [[0,0.11764705882352945]]
+      slices: [[[0n,1n],[2n,17n]]]
     },
     B: {
       size: 15,
-      slices: [[0.5,0.6764705882352942]]
+      slices: [[[1n,2n],[23n,34n]]]
     },
     C: {
       size: 40,
       slices: [
-        [0.11764705882352945,0.25],
-        [0.299396681749623,0.41666666666666663],
-        [0.6764705882352942,0.7307692307692308],
-        [0.8333333333333334,1]
+        [[2n,17n],[1n,4n]],
+        [[397n,1326n],[5n,12n]],
+        [[23n,34n],[19n,26n]],
+        [[5n,6n],[1n,1n]]
       ]
     },
     D: {
       size: 20,
       slices: [
-        [0.25,0.299396681749623],
-        [0.41666666666666663,0.5],
-        [0.7307692307692308,0.8333333333333334]
+        [[1n,4n],[397n,1326n]],
+        [[5n,12n],[1n,2n]],
+        [[19n,26n],[5n,6n]]
       ]
     }
   })
-  t.equal(round(calcMoves(prev, cur).toNumber(),10000),0.1629)
+  var moves = calcMoves(prev,cur)
+  t.deepEqual(moves, [23235n,142324n], 'expected move ratio')
   t.end()
 })
 
@@ -79,7 +84,6 @@ test('moves', function (t) {
   ]
   ops.forEach(function (op) {
     var prev = new RSlice(rs.getBins())
-    var expected = 0
     var prevTotal = 0
     var bins = rs.getBins()
     Object.keys(bins).forEach(function (key) {
@@ -89,15 +93,19 @@ test('moves', function (t) {
     Object.keys(op).forEach(function (key) {
       newTotal += op[key] - bins[key].size
     })
+    var expected = [0n,1n]
     Object.keys(op).forEach(function (key) {
-      expected += Math.abs(bins[key].size / prevTotal - op[key] / newTotal)
+      rat.set(tmpr0, bins[key].size, prevTotal)
+      rat.set(tmpr1, op[key], newTotal)
+      rat.subtract(tmpr0, tmpr0, tmpr1)
+      rat.abs(tmpr0, tmpr0)
+      rat.add(expected, expected, tmpr0)
     })
+    rat.simplify(expected, expected)
     rs.set(op)
-    var moved = calcMoves(prev, rs).toNumber()
-    t.equal(round(moved,10000),round(expected,10000), JSON.stringify(op))
+    var moved = calcMoves(prev, rs)
+    t.deepEqual(moved, expected, `moved for ${JSON.stringify(op)}`)
     t.ifError(valid(rs), `valid after ${JSON.stringify(op)}`)
   })
   t.end()
 })
-
-function round (x, n) { return Math.round(x*n)/n }

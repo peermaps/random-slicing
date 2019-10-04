@@ -1,5 +1,5 @@
-var R = require('./lib/r.js')
-var ZERO = R(0)
+var rat = require('./lib/rat.js')
+var ZERO = rat.create(0n,1n)
 
 module.exports = RSlice
 
@@ -12,16 +12,8 @@ function RSlice (bins) {
       self._bins[key] = {
         size: bins[key].size,
         slices: bins[key].slices.map(function (iv) {
-          if (typeof iv[0] === 'number') {
-            var start = R(iv[0])
-          } else if (Array.isArray(iv[0])) {
-            var start = R(iv[0][0],iv[0][1])
-          }
-          if (typeof iv[1] === 'number') {
-            var end = R(iv[1])
-          } else if (Array.isArray(iv[1])) {
-            var end = R(iv[1][0],iv[1][1])
-          }
+          var start = [toBig(iv[0][0]),toBig(iv[0][1])]
+          var end = [toBig(iv[1][0]),toBig(iv[1][1])]
           return [start,end]
         })
       }
@@ -34,21 +26,9 @@ function RSlice (bins) {
   })
 }
 
-RSlice.prototype.getBins = function (key) {
+RSlice.prototype.getBins = function () {
   var self = this
-  var bins = {}
-  for (var i = 0; i < self._binKeys.length; i++) {
-    var key = self._binKeys[i]
-    var bin = self._bins[key]
-    var slices = []
-    var prefixes = []
-    for (var j = 0; j < bin.slices.length; j++) {
-      var s = bin.slices[j]
-      slices.push([ s[0].asTuple(), s[1].asTuple() ])
-    }
-    bins[key] = { size: bin.size, slices }
-  }
-  return bins
+  return self._bins
 }
 
 RSlice.prototype.set = function (updates) {
@@ -59,14 +39,15 @@ RSlice.prototype.set = function (updates) {
     newSize += updates[key] - (bin ? bin.size : 0)
   })
   if (self._binKeys.length === 0) {
-    var offset = R(0)
+    var offset = [0n,1n]
     Object.keys(updates).forEach(function (key) {
-      var slices = [[
-        offset.copy(),
-        R(updates[key],newSize).add(offset)
-      ]]
-      offset.add(R(updates[key],newSize))
-      self._bins[key] = { size: updates[key], slices }
+      var iv = [
+        rat.copy([],offset),
+        rat.create(updates[key],newSize)
+      ]
+      rat.add(iv[1], offset, iv[1])
+      rat.copy(offset, iv[1])
+      self._bins[key] = { size: updates[key], slices: [iv] }
       self._binKeys.push(key)
       self._totalSize += updates[key]
     })
@@ -89,16 +70,16 @@ RSlice.prototype.set = function (updates) {
     var key = self._binKeys[i]
     var bin = self._bins[key]
     var newBinSize = updates.hasOwnProperty(key) ? updates[key] : bin.size
-    var newRatio = R(newBinSize,newSize)
+    var newRatio = rat.create(newBinSize,newSize)
     var ratio = sliceSum(bin.slices)
-    var delta = ratio.copy().subtract(newRatio) // amount to shrink
-    if (delta.lte(ZERO)) continue
+    var delta = rat.subtract([],ratio,newRatio) // amount to shrink
+    if (rat.lte(delta,ZERO)) continue
     var matched = false
     // first search for exact matches
     for (var j = 0; j < bin.slices.length; j++) {
       var iv = bin.slices[j]
       var len = length(iv)
-      if (!len.eq(delta, len)) continue
+      if (!rat.eq(len, delta)) continue
       gaps.push(iv)
       bin.slices.splice(j,1)
       matched = true
@@ -109,12 +90,12 @@ RSlice.prototype.set = function (updates) {
     for (var j = 0; j < bin.slices.length; j++) {
       var iv = bin.slices[j]
       var len = length(iv)
-      if (len.gt(delta)) continue
+      if (rat.gt(len,delta)) continue
       gaps.push(iv)
       bin.slices.splice(j,1)
       j--
-      delta.subtract(len)
-      if (delta.eq(ZERO)) {
+      rat.subtract(delta, delta, len)
+      if (rat.eq(delta,ZERO)) {
         matched = true
         break
       }
@@ -124,15 +105,18 @@ RSlice.prototype.set = function (updates) {
     for (var j = 0; j < bin.slices.length; j++) {
       var iv = bin.slices[j]
       var len = length(iv)
-      if (len.lt(delta)) continue
-      if (delta.eq(len)) {
+      if (rat.lt(len,delta)) continue
+      if (rat.eq(len,delta)) {
         gaps.push(iv)
         bin.slices.splice(j,1)
         matched = true
         break
       }
-      gaps.push([iv[1].copy().subtract(delta),iv[1].copy()])
-      iv[1].subtract(delta)
+      gaps.push([
+        rat.subtract([],iv[1],delta),
+        rat.copy([],iv[1])
+      ])
+      rat.subtract(iv[1], iv[1], delta)
       matched = true
       break
     }
@@ -144,16 +128,16 @@ RSlice.prototype.set = function (updates) {
     var key = self._binKeys[i]
     var bin = self._bins[key]
     var newBinSize = updates.hasOwnProperty(key) ? updates[key] : bin.size
-    var newRatio = R(newBinSize,newSize)
+    var newRatio = rat.create(newBinSize,newSize)
     var ratio = sliceSum(bin.slices)
-    var delta = newRatio.copy().subtract(ratio) // amount to grow
-    if (delta.lte(ZERO)) continue
+    var delta = rat.subtract([],newRatio,ratio) // amount to grow
+    if (rat.lte(delta,ZERO)) continue
     var matched = false
     // first search for exact matches
     for (var j = 0; j < gaps.length; j++) {
       var iv = gaps[j]
       var len = length(iv)
-      if (!delta.eq(len)) continue
+      if (!rat.eq(delta,len)) continue
       bin.slices.push(iv)
       gaps.splice(j,1)
       matched = true
@@ -164,12 +148,12 @@ RSlice.prototype.set = function (updates) {
     for (var j = 0; j < gaps.length; j++) {
       var iv = gaps[j]
       var len = length(iv)
-      if (len.gt(delta)) continue
+      if (rat.gt(len,delta)) continue
       bin.slices.push(iv)
       gaps.splice(j,1)
       j--
-      delta.subtract(len)
-      if (delta.eq(ZERO)) {
+      rat.subtract(delta,delta,len)
+      if (rat.eq(delta,ZERO)) {
         matched = true
         break
       }
@@ -179,19 +163,22 @@ RSlice.prototype.set = function (updates) {
     for (var j = 0; j < gaps.length; j++) {
       var iv = gaps[j]
       var len = length(iv)
-      if (len.eq(delta)) {
+      if (rat.eq(len,delta)) {
         bin.slices.push(iv)
         gaps.splice(j,1)
         matched = true
         break
-      } else if (len.lt(delta)) continue
-      bin.slices.push([iv[1].copy().subtract(delta),iv[1].copy()])
-      iv[1].subtract(delta)
+      } else if (rat.lt(len,delta)) continue
+      bin.slices.push([
+        rat.subtract([],iv[1],delta),
+        rat.copy([],iv[1])
+      ])
+      rat.subtract(iv[1],iv[1],delta)
       matched = true
       break
     }
     if (matched) continue
-    if (delta.eq(ZERO)) continue
+    if (rat.eq(delta,ZERO)) continue
     throw new Error('not matched: ' + key + ': ' + newBinSize)
   }
   if (gaps.length > 0) throw new Error('gaps remain: ' + displayGaps(gaps))
@@ -212,10 +199,10 @@ RSlice.prototype.set = function (updates) {
 }
 
 function sliceSum (slices) {
-  var sum = R(0)
+  var sum = [0n,1n]
   for (var i = 0; i < slices.length; i++) {
-    sum.add(slices[i][1])
-    sum.subtract(slices[i][0])
+    rat.add(sum, sum, slices[i][1])
+    rat.subtract(sum, sum, slices[i][0])
   }
   return sum
 }
@@ -224,7 +211,7 @@ function cleanup (dst) {
   // sort, remove 0-width, and combine adjacent slices
   dst.slices.sort(cmpIv)
   for (var i = 0; i < dst.slices.length; i++) {
-    if (length(dst.slices[i]).eq(ZERO)) {
+    if (rat.eq(length(dst.slices[i]),ZERO)) {
       dst.slices.splice(i,1)
       i--
     }
@@ -240,17 +227,27 @@ function cleanup (dst) {
 
 function adjacent (g, iv) {
   if (!g) return false
-  return g[1].eq(iv[0]) || g[0].eq(iv[1])
+  return rat.eq(g[1],iv[0]) || rat.eq(g[0],iv[1])
 }
 function length (iv) {
-  return iv[1].copy().subtract(iv[0])
+  return rat.subtract([],iv[1],iv[0])
 }
 function cmpIv (a, b) {
-  return a[0].eq(b[0]) ? a[1].compare(b[1]) : a[0].compare(b[0])
+  return rat.eq(a[0],b[0]) ? rat.compare(a[1],b[1]) : rat.compare(a[0],b[0])
 }
 
 function displayGaps (gaps) {
   return '[' + gaps.map(function (g) {
     return '(' + g[0] + '..' + g[1] + ')'
   }).join(', ') + ']'
+}
+
+function toBig (x) {
+  if (typeof x === 'string') {
+    return BigInt(x)
+  } else if (typeof x === 'bigint') {
+    return x
+  } else {
+    throw new Error('unexpected interval start type ' + typeof x)
+  }
 }
