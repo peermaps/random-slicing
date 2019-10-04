@@ -19,7 +19,6 @@ for (var i = 0; i < 10000; i++) {
   var err = valid(rs.bins)
   if (err) throw err
   show(rs)
-  //Object.keys(rs.bins).forEach(function (key) { console.log(rs.bins[key].slices) })
 }
 
 function show (rs) {

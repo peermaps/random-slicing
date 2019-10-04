@@ -1,6 +1,5 @@
 var R = require('./lib/r.js')
-var almostEqual = require('almost-equal')
-var EP = almostEqual.FLT_EPSILON
+var ZERO = R(0)
 
 module.exports = RSlice
 
@@ -66,7 +65,7 @@ RSlice.prototype.set = function (updates) {
     var newRatio = R(newBinSize,newSize)
     var ratio = sliceSum(bin.slices)
     var delta = ratio.copy().subtract(newRatio) // amount to shrink
-    if (delta.lte(0.0)) continue
+    if (delta.lte(ZERO)) continue
     var matched = false
     // first search for exact matches
     for (var j = 0; j < bin.slices.length; j++) {
@@ -88,7 +87,7 @@ RSlice.prototype.set = function (updates) {
       bin.slices.splice(j,1)
       j--
       delta.subtract(len)
-      if (delta.eq(0.0)) {
+      if (delta.eq(ZERO)) {
         matched = true
         break
       }
@@ -121,7 +120,7 @@ RSlice.prototype.set = function (updates) {
     var newRatio = R(newBinSize,newSize)
     var ratio = sliceSum(bin.slices)
     var delta = newRatio.copy().subtract(ratio) // amount to grow
-    if (delta.lte(0.0)) continue
+    if (delta.lte(ZERO)) continue
     var matched = false
     // first search for exact matches
     for (var j = 0; j < gaps.length; j++) {
@@ -143,7 +142,7 @@ RSlice.prototype.set = function (updates) {
       gaps.splice(j,1)
       j--
       delta.subtract(len)
-      if (delta.eq(0.0)) {
+      if (delta.eq(ZERO)) {
         matched = true
         break
       }
@@ -165,7 +164,7 @@ RSlice.prototype.set = function (updates) {
       break
     }
     if (matched) continue
-    if (delta.eq(0.0)) continue
+    if (delta.eq(ZERO)) continue
     throw new Error('not matched: ' + key + ': ' + newBinSize)
   }
   if (gaps.length > 0) throw new Error('gaps remain: ' + displayGaps(gaps))
@@ -198,7 +197,7 @@ function cleanup (dst) {
   // sort, remove 0-width, and combine adjacent slices
   dst.slices.sort(cmpIv)
   for (var i = 0; i < dst.slices.length; i++) {
-    if (length(dst.slices[i]).eq(0.0)) {
+    if (length(dst.slices[i]).eq(ZERO)) {
       dst.slices.splice(i,1)
       i--
     }
