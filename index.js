@@ -27,8 +27,30 @@ function RSlice (bins) {
 }
 
 RSlice.prototype.getBins = function () {
+  return this._bins
+}
+
+RSlice.parse = function (str) {
+  return new RSlice(JSON.parse(str))
+}
+
+RSlice.prototype.serialize = function () {
   var self = this
-  return self._bins
+  var bins = {}
+  for (var i = 0; i < self._binKeys.length; i++) {
+    var key = self._binKeys[i]
+    var bin = self._bins[key]
+    bins[key] = {
+      size: bin.size,
+      slices: bin.slices.map(function (slice) {
+        return [
+          [slice[0][0].toString(),slice[0][1].toString()],
+          [slice[1][0].toString(),slice[1][1].toString()]
+        ]
+      })
+    }
+  }
+  return JSON.stringify(bins)
 }
 
 RSlice.prototype.set = function (updates) {

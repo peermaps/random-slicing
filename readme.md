@@ -97,6 +97,14 @@ For example, a `bin` might look like:
 
 which contains slices from 0 to 1/7 and from 87/364 to 1/4.
 
+## var str = rs.serialize()
+
+Serialize an `rs` instance to a string.
+
+## var rs = RS.parse(str)
+
+Create a new `rs` instance from a previously serialized string `str`.
+
 # license
 
 [license zero parity](https://licensezero.com/licenses/parity)
