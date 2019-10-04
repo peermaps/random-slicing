@@ -1,6 +1,5 @@
-var RSlice = require('../')
-
-var rs = new RSlice
+var RS = require('../')
+var rs = new RS
 rs.set({ A: 20, B: 20, C: 20, D: 20 })
 show(rs)
 rs.set({ A: 10 })

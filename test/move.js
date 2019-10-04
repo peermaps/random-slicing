@@ -1,7 +1,6 @@
 var test = require('tape')
 var RSlice = require('../')
 var calcMoves = require('./lib/move.js')
-var copy = require('./lib/copy.js')
 var valid = require('./lib/valid.js')
 
 test('check move calculation', function (t) {

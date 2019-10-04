@@ -1,7 +1,7 @@
-var RSlice = require('../')
+var RS = require('../')
 var valid = require('../test/lib/valid.js')
 
-var rs = new RSlice
+var rs = new RS
 var sizes = { A: 20, B: 20, C: 20, D: 20, E: 20, F: 20, G: 20 }
 rs.set(sizes)
 var keys = Object.keys(sizes)
