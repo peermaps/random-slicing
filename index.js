@@ -6,29 +6,56 @@ module.exports = RSlice
 function RSlice (bins) {
   var self = this
   if (!(self instanceof RSlice)) return new RSlice(bins)
-  self.bins = {}
+  self._bins = {}
   if (bins) {
     Object.keys(bins).forEach(function (key) {
-      self.bins[key] = {
+      self._bins[key] = {
         size: bins[key].size,
         slices: bins[key].slices.map(function (iv) {
-          return [R(iv[0]),R(iv[1])]
+          if (typeof iv[0] === 'number') {
+            var start = R(iv[0])
+          } else if (Array.isArray(iv[0])) {
+            var start = R(iv[0][0],iv[0][1])
+          }
+          if (typeof iv[1] === 'number') {
+            var end = R(iv[1])
+          } else if (Array.isArray(iv[1])) {
+            var end = R(iv[1][0],iv[1][1])
+          }
+          return [start,end]
         })
       }
     })
   }
   self._totalSize = 0
-  self._binKeys = Object.keys(self.bins).sort()
+  self._binKeys = Object.keys(self._bins).sort()
   self._binKeys.forEach(function (key) {
-    self._totalSize += self.bins[key].size
+    self._totalSize += self._bins[key].size
   })
+}
+
+RSlice.prototype.getBins = function (key) {
+  var self = this
+  var bins = {}
+  for (var i = 0; i < self._binKeys.length; i++) {
+    var key = self._binKeys[i]
+    var bin = self._bins[key]
+    var slices = []
+    var prefixes = []
+    for (var j = 0; j < bin.slices.length; j++) {
+      var s = bin.slices[j]
+      slices.push([ s[0].asTuple(), s[1].asTuple() ])
+    }
+    bins[key] = { size: bin.size, slices }
+  }
+  return bins
 }
 
 RSlice.prototype.set = function (updates) {
   var self = this
   var newSize = self._totalSize
   Object.keys(updates).forEach(function (key) {
-    var bin = self.bins[key]
+    var bin = self._bins[key]
     newSize += updates[key] - (bin ? bin.size : 0)
   })
   if (self._binKeys.length === 0) {
@@ -39,7 +66,7 @@ RSlice.prototype.set = function (updates) {
         R(updates[key],newSize).add(offset)
       ]]
       offset.add(R(updates[key],newSize))
-      self.bins[key] = { size: updates[key], slices }
+      self._bins[key] = { size: updates[key], slices }
       self._binKeys.push(key)
       self._totalSize += updates[key]
     })
@@ -48,8 +75,8 @@ RSlice.prototype.set = function (updates) {
   }
   var addedKey = false
   Object.keys(updates).forEach(function (key) {
-    if (!self.bins[key]) {
-      self.bins[key] = { size: 0, slices: [] }
+    if (!self._bins[key]) {
+      self._bins[key] = { size: 0, slices: [] }
       self._binKeys.push(key)
       addedKey = true
     }
@@ -60,7 +87,7 @@ RSlice.prototype.set = function (updates) {
   var gaps = []
   for (var i = 0; i < self._binKeys.length; i++) {
     var key = self._binKeys[i]
-    var bin = self.bins[key]
+    var bin = self._bins[key]
     var newBinSize = updates.hasOwnProperty(key) ? updates[key] : bin.size
     var newRatio = R(newBinSize,newSize)
     var ratio = sliceSum(bin.slices)
@@ -115,7 +142,7 @@ RSlice.prototype.set = function (updates) {
   // second phase: assign gaps to intervals that need to grow
   for (var i = 0; i < self._binKeys.length; i++) {
     var key = self._binKeys[i]
-    var bin = self.bins[key]
+    var bin = self._bins[key]
     var newBinSize = updates.hasOwnProperty(key) ? updates[key] : bin.size
     var newRatio = R(newBinSize,newSize)
     var ratio = sliceSum(bin.slices)
@@ -171,12 +198,12 @@ RSlice.prototype.set = function (updates) {
   // ---
   for (var i = 0; i < self._binKeys.length; i++) {
     var key = self._binKeys[i]
-    var b = self.bins[key]
+    var b = self._bins[key]
     if (updates.hasOwnProperty(key)) {
       b.size = updates[key]
     }
     if (b.size === 0) {
-      delete self.bins[self._binKeys[i]]
+      delete self._bins[self._binKeys[i]]
       self._binKeys.splice(i,1)
       i--
     } else cleanup(b)

@@ -33,7 +33,7 @@ test('check move calculation', function (t) {
         [0.7307692307692308,0.8333333333333334]
       ]
     }
-  }).bins
+  })
   var cur = new RSlice({
     A: {
       size: 10,
@@ -60,8 +60,8 @@ test('check move calculation', function (t) {
         [0.7307692307692308,0.8333333333333334]
       ]
     }
-  }).bins
-  t.equal(round(calcMoves(prev, cur),10000),0.1629)
+  })
+  t.equal(round(calcMoves(prev, cur).toNumber(),10000),0.1629)
   t.end()
 })
 
@@ -79,23 +79,24 @@ test('moves', function (t) {
     { B: 25 }  // grow
   ]
   ops.forEach(function (op) {
-    var prev = copy(rs.bins)
+    var prev = new RSlice(rs.getBins())
     var expected = 0
     var prevTotal = 0
-    Object.keys(rs.bins).forEach(function (key) {
-      prevTotal += rs.bins[key].size
+    var bins = rs.getBins()
+    Object.keys(bins).forEach(function (key) {
+      prevTotal += bins[key].size
     })
     var newTotal = prevTotal
     Object.keys(op).forEach(function (key) {
-      newTotal += op[key] - rs.bins[key].size
+      newTotal += op[key] - bins[key].size
     })
     Object.keys(op).forEach(function (key) {
-      expected += Math.abs(rs.bins[key].size / prevTotal - op[key] / newTotal)
+      expected += Math.abs(bins[key].size / prevTotal - op[key] / newTotal)
     })
     rs.set(op)
-    var moved = calcMoves(prev, rs.bins)
+    var moved = calcMoves(prev, rs).toNumber()
     t.equal(round(moved,10000),round(expected,10000), JSON.stringify(op))
-    t.ifError(valid(rs.bins), `valid after ${JSON.stringify(op)}`)
+    t.ifError(valid(rs), `valid after ${JSON.stringify(op)}`)
   })
   t.end()
 })

@@ -1,24 +1,23 @@
-module.exports = function (bins) {
+module.exports = function (rs) {
   var total = 0
-  var binKeys = Object.keys(bins)
-  for (var i = 0; i < binKeys.length; i++) {
-    total += bins[binKeys[i]].size
+  for (var i = 0; i < rs._binKeys.length; i++) {
+    total += rs._bins[rs._binKeys[i]].size
   }
   var totalFloat = 0
-  for (var i = 0; i < binKeys.length; i++) {
-    var b = bins[binKeys[i]]
+  for (var i = 0; i < rs._binKeys.length; i++) {
+    var b = rs._bins[rs._binKeys[i]]
     var ratio = 0
     for (var j = 0; j < b.slices.length; j++) {
       var iv = b.slices[j]
       if (iv[0].gte(iv[1])) {
         return new Error(`invalid interval in
-          ${binKeys[i]}:${j} [${iv}]`)
+          ${rs._binKeys[i]}:${j} [${iv}]`)
       }
       ratio += iv[1].toNumber() - iv[0].toNumber()
     }
     totalFloat += ratio
     if (Math.abs(ratio - b.size / total) > 0.0001) {
-      return new Error(`invalid ratio in ${binKeys[i]}:
+      return new Error(`invalid ratio in ${rs._binKeys[i]}:
         ${b.size} / ${total}. expected: ${b.size/total}. actual: ${ratio}`)
     }
   }
@@ -26,8 +25,8 @@ module.exports = function (bins) {
     return new Error(`invalid total: ${totalFloat}`)
   }
   var slices = []
-  for (var i = 0; i < binKeys.length; i++) {
-    var b = bins[binKeys[i]]
+  for (var i = 0; i < rs._binKeys.length; i++) {
+    var b = rs._bins[rs._binKeys[i]]
     slices = slices.concat(b.slices)
   }
   for (var i = 0; i < slices.length; i++) {

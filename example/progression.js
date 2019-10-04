@@ -19,12 +19,11 @@ rs.set({ B: 25 })
 show(rs)
 
 function show (rs) {
-  Object.keys(rs.bins).sort().forEach(function (key) {
-    var b = rs.bins[key]
+  Object.entries(rs.getBins()).forEach(function ([key,b]) {
     var n = 10000
-    console.log(key,b.size,JSON.stringify(b.slices.map(function (slice) {
-      return [Math.round(slice[0]*n)/n,Math.round(slice[1]*n)/n]
-    })))
+    console.log(key, b.size, b.slices.map(([start,end]) => {
+      return `[${start[0]}/${start[1]}..${end[0]}/${end[1]}]`
+    }).join(', '))
   })
   console.log('---')
 }
