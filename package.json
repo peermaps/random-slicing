@@ -1,6 +1,6 @@
 {
   "name": "random-slicing",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "resizable hashing strategy for large-scale storage",
   "license": "Parity-6.0.0 AND Apache-2.0",
   "keywords": [
