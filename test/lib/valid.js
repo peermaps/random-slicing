@@ -1,4 +1,4 @@
-var rat = require('../../lib/rat.js')
+var rat = require('bigint-rational')
 
 module.exports = function (rs) {
   var total = 0

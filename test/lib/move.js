@@ -1,4 +1,4 @@
-var rat = require('../../lib/rat.js')
+var rat = require('bigint-rational')
 var calcOverlap = require('./slices-overlap.js')
 var tmp = [0n,1n]
 var ZERO = [0n,1n]
@@ -14,7 +14,7 @@ module.exports = function (a, b) {
     rat.subtract(tmp, length(a._bins[key].slices), delta)
     if (rat.gt(tmp, ZERO)) rat.add(overlap, overlap, tmp)
   })
-  rat.simplify(overlap, overlap)
+  rat.reduce(overlap, overlap)
   return overlap
 }
 

@@ -2,7 +2,7 @@ var test = require('tape')
 var RSlice = require('../')
 var calcMoves = require('./lib/move.js')
 var valid = require('./lib/valid.js')
-var rat = require('../lib/rat.js')
+var rat = require('bigint-rational')
 var ZERO = [0n,1n]
 
 test('multi', function (t) {
@@ -23,7 +23,7 @@ test('multi', function (t) {
     [50n+55n,40n+40n+50n+55n],
     [40n+40n,40n+40n+40n+40n]
   )
-  rat.simplify(expected, expected)
+  rat.reduce(expected, expected)
   t.deepEqual(moved, expected, 'moves after multi-grow')
   t.ifError(valid(rs))
   t.end()

@@ -1,4 +1,4 @@
-var rat = require('../../lib/rat.js')
+var rat = require('bigint-rational')
 var ZERO = rat.create(0,1)
 var tmp0 = rat.create(0,1)
 var tmp1 = rat.create(0,1)
@@ -16,6 +16,7 @@ module.exports = function (a, b) {
       rat.add(overlap, overlap, max(ZERO, min(tmp0, tmp1)))
     }
   }
+  rat.reduce(overlap, overlap)
   return overlap
 }
 

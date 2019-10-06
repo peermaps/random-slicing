@@ -1,4 +1,4 @@
-var rat = require('./lib/rat.js')
+var rat = require('bigint-rational')
 var ZERO = rat.create(0n,1n)
 
 module.exports = RSlice
@@ -69,6 +69,8 @@ RSlice.prototype.set = function (updates) {
       ]
       rat.add(iv[1], offset, iv[1])
       rat.copy(offset, iv[1])
+      rat.reduce(iv[0], iv[0])
+      rat.reduce(iv[1], iv[1])
       self._bins[key] = { size: updates[key], slices: [iv] }
       self._binKeys.push(key)
       self._totalSize += updates[key]
@@ -230,7 +232,12 @@ function sliceSum (slices) {
 }
 
 function cleanup (dst) {
-  // sort, remove 0-width, and combine adjacent slices
+  // reduce, sort, remove 0-width, and combine adjacent slices
+  for (var i = 0; i < dst.slices.length; i++) {
+    var iv = dst.slices[i]
+    rat.reduce(iv[0], iv[0])
+    rat.reduce(iv[1], iv[1])
+  }
   dst.slices.sort(cmpIv)
   for (var i = 0; i < dst.slices.length; i++) {
     if (rat.eq(length(dst.slices[i]),ZERO)) {
